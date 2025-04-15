@@ -1,0 +1,189 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX 100
+
+// ============================ BST (Flights) ============================
+
+typedef struct Flight {
+    int id;
+    char destination[50];
+    int seats;
+    struct Flight *left, *right;
+} Flight;
+
+Flight* createFlight(int id, char dest[], int seats) {
+    Flight* f = malloc(sizeof(Flight));
+    f->id = id;
+    strcpy(f->destination, dest);
+    f->seats = seats;
+    f->left = f->right = NULL;
+    return f;
+}
+
+Flight* insertFlight(Flight* root, int id, char dest[], int seats) {
+    if (!root) return createFlight(id, dest, seats);
+    if (id < root->id) root->left = insertFlight(root->left, id, dest, seats);
+    else if (id > root->id) root->right = insertFlight(root->right, id, dest, seats);
+    return root;
+}
+
+Flight* searchFlight(Flight* root, int id) {
+    if (!root || root->id == id) return root;
+    return (id < root->id) ? searchFlight(root->left, id) : searchFlight(root->right, id);
+}
+
+void printFlights(Flight* root) {
+    if (!root) return;
+    printFlights(root->left);
+    printf("Flight ID: %d | Destination: %s | Seats Available: %d\n", root->id, root->destination, root->seats);
+    printFlights(root->right);
+}
+
+// ============================ Queue (Passengers) ============================
+
+typedef struct Passenger {
+    char name[50];
+    int flightID;
+    struct Passenger* next;
+} Passenger;
+
+typedef struct Queue {
+    Passenger *front, *rear;
+} Queue;
+
+void initQueue(Queue* q) {
+    q->front = q->rear = NULL;
+}
+
+void enqueue(Queue* q, char name[], int flightID) {
+    Passenger* p = malloc(sizeof(Passenger));
+    strcpy(p->name, name);
+    p->flightID = flightID;
+    p->next = NULL;
+    if (!q->rear) q->front = q->rear = p;
+    else {
+        q->rear->next = p;
+        q->rear = p;
+    }
+}
+
+void printPassengers(Queue* q) {
+    if (!q->front) {
+        printf("No passengers have reserved seats.\n");
+        return;
+    }
+    for (Passenger* p = q->front; p; p = p->next)
+        printf("Passenger: %s | Flight ID: %d\n", p->name, p->flightID);
+}
+
+// ============================ Graph (Routes) ============================
+
+int graph[MAX][MAX];
+char cities[MAX][50];
+int cityCount = 0;
+
+int getCityIndex(char city[]) {
+    for (int i = 0; i < cityCount; i++)
+        if (strcmp(cities[i], city) == 0)
+            return i;
+    strcpy(cities[cityCount], city);
+    return cityCount++;
+}
+
+void addRoute(char city1[], char city2[]) {
+    int i = getCityIndex(city1);
+    int j = getCityIndex(city2);
+    graph[i][j] = graph[j][i] = 1;
+}
+
+void printRoutes() {
+    printf("\nFlight Routes:\n");
+    for (int i = 0; i < cityCount; i++) {
+        printf("%s -> ", cities[i]);
+        for (int j = 0; j < cityCount; j++)
+            if (graph[i][j]) printf("%s  ", cities[j]);
+        printf("\n");
+    }
+}
+
+// ============================ Utility ============================
+
+void getLineInput(char* prompt, char* buffer, int size) {
+    printf("%s", prompt);
+    fgets(buffer, size, stdin);
+    buffer[strcspn(buffer, "\n")] = '\0'; // remove trailing newline
+}
+
+// ============================ Main ============================
+
+int main() {
+    Flight* root = NULL;
+    Queue q;
+    initQueue(&q);
+
+    int choice;
+    char temp[50];
+
+    while (1) {
+        printf("\n========= Flight Reservation System =========\n");
+        printf("1. Add Flight\n2. Show All Flights\n3. Reserve a Seat\n4. Show Passengers\n5. Add Flight Route\n6. Show Routes\n0. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        getchar();  // Consume leftover newline
+
+        if (choice == 0) break;
+
+        switch (choice) {
+            case 1: {
+                int id, seats;
+                char destination[50];
+                printf("Enter Flight ID: ");
+                scanf("%d", &id); getchar();
+                getLineInput("Enter Destination: ", destination, sizeof(destination));
+                printf("Enter Available Seats: ");
+                scanf("%d", &seats); getchar();
+                root = insertFlight(root, id, destination, seats);
+                break;
+            }
+            case 2:
+                printFlights(root);
+                break;
+            case 3: {
+                char name[50];
+                int id;
+                getLineInput("Enter Passenger Name: ", name, sizeof(name));
+                printf("Enter Flight ID to Reserve: ");
+                scanf("%d", &id); getchar();
+                Flight* f = searchFlight(root, id);
+                if (f && f->seats > 0) {
+                    enqueue(&q, name, id);
+                    f->seats--;
+                    printf("Reservation successful!\n");
+                } else {
+                    printf("Invalid Flight ID or No seats available.\n");
+                }
+                break;
+            }
+            case 4:
+                printPassengers(&q);
+                break;
+            case 5: {
+                char city1[50], city2[50];
+                getLineInput("Enter City 1: ", city1, sizeof(city1));
+                getLineInput("Enter City 2: ", city2, sizeof(city2));
+                addRoute(city1, city2);
+                printf("Route added.\n");
+                break;
+            }
+            case 6:
+                printRoutes();
+                break;
+            default:
+                printf("Invalid option.\n");
+        }
+    }
+
+    return 0;
+}
