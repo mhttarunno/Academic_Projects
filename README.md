@@ -18,4 +18,4 @@ The projects in this repository cover topics such as:
 
 - **Languages**: C, C++
 - **Compilers**: GCC, G++
-- **Development Environments**: Code::Blocks, Visual Studio, CLion, or terminal-based development with `gcc`/`g++`
+- **Development Environments**: Visual Studio Code or terminal-based development with `gcc`/`g++`
